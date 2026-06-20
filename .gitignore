@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+mcp-server/node_modules/
+
+# Build outputs
+desktop-build/
+app/build/
+app/.dart_tool/
+app/.idea/
+app/windows/flutter/ephemeral/
+app/.flutter-plugins-dependencies
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Go
+server/push-server
+server/push-server-linux
+server/data/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Packaged extensions / third-party bundles
+*.vsix
+
+# Runtime data
+data/
+
+# Logs
+*.log
+
+# Secrets / runtime configs (must NEVER be committed)
+cascade/config/push_config.json
+mcp-server/push_config.json
+cascade/config/windsurf_dialog_config.json
+*.pem
+*.key
+.env
+.env.*
+!.env.example

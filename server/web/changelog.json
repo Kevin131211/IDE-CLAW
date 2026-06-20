@@ -1,0 +1,191 @@
+[
+  {
+    "version": "1.0.0",
+    "build": 16,
+    "date": "2026-05-10",
+    "changes": [
+      "**Windsurf 添加账号 - 全自动登录** (像星火一样, 完全无需手动输入): build=15 引入 webview 后用户还要手动填密码点 Log in. 现在 build=16 webview 加载完登录页后会自动注入 JS, 用 React-aware setter 写入 email + password 字段并触发 onChange 事件, 然后自动点击 Log in 按钮 → windsurf 重定向回 callback URL → 拦截 access_token → 关闭 webview → 完成添加. 整个过程用户**只需点一次『开始登录』**.",
+      "防死循环: 同一 URL path 只自动填一次, 总次数最多 3 次; 仅在 windsurf.com / codeium.com 域名 + signin/login/auth 路径下注入, 不会泄漏密码到第三方 SSO 站",
+      "添加账号对话框文案更新: 密码字段从『可选』改成『强烈推荐填写, 可一键全自动登录』; 介绍页明确说明『填密码=全自动, 不填密码=半自动 (只跳页), Google/GitHub SSO 不能自动`"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 15,
+    "date": "2026-05-09",
+    "changes": [
+      "**Windsurf 添加账号支持 App 内嵌登录** (推荐): 不再需要打开外部浏览器复制粘贴 token. 点添加账号 → 选『App 内嵌登录』→ 在 IDE Claw 内置 webview 里完成登录 → 自动拦截 access_token → 关 webview 完成添加. 跨平台 (Android/iOS/Windows/macOS)",
+      "**自动续接『Continue』按钮三层降级策略** (修复 build<15 自动续接经常失效的问题): (1) 图像模板匹配 cascade/assets/continue_buttons/*.png 用 pyautogui+opencv 在屏幕上找按钮 → 屏幕级点击, 跨主题/DPI/Electron 都稳定; (2) UIA 定位 + pyautogui 屏幕坐标点击, 不再依赖 UIA Click() 在 Electron 上失效; (3) Alt+Enter 热键作为最后兜底",
+      "**新增 `auto_continue.py --capture-button` 工具**: 在 Continue 按钮可见时一键自动截屏 + 用 UIA 定位 + 自动裁剪保存为样本图, 用户无需手动用画图/PS 裁剪",
+      "新增 `auto_continue.py --screenshot` 截全屏到 cascade/assets/continue_buttons/ 用于人工裁剪 fallback",
+      "cascade/requirements.txt 新增 pyautogui + pillow + opencv-python (Windows only) 用于图像匹配",
+      "保留旧的『外部浏览器 + 复制 token』流程作为 webview 失败时的 fallback (添加账号对话框第一步选择)"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 14,
+    "date": "2026-05-08",
+    "changes": [
+      "**修复 setup-cascade.bat 中文乱码**: 原脚本是 UTF-8 无 BOM, 在中文 Windows 默认 GBK codepage 下会被 cmd.exe 错误解码导致 'echo' 被切成 'cho' 等乱码 → 改成纯 ASCII 全英文版本, 任何 codepage 下都能正常运行",
+      "**修复 AI 运行命令时 cwd 强制跳转到 IDE-claw-main 目录** 的问题: `cascade/cmd_tool.py` 的 `--cwd` 默认值原本是 `BASE_DIR`(即 IDE-claw-main 安装目录), 现改为 `os.getcwd()` (调用方当前工作目录), 这样 AI 在用户自己的项目里跑命令就会用项目目录而不是 IDE Claw 安装目录",
+      "**改进 Windsurf 添加账号对话框 UX**: 新增 ② 注销按钮, 解决 windsurf.com 已登录时 OAuth URL 被 cookie session 短路, 直接跳到 /profile 看不到 token 的问题. 现在流程是 4 步: ① 填邮箱 ② 注销旧 cookie ③ 打开登录页拿 token ④ 粘贴",
+      "添加详细的『为什么需要这一步』提示, 告知用户可以用浏览器无痕窗口作为替代方案"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 13,
+    "date": "2026-05-07",
+    "changes": [
+      "**修复 build=12 添加账号 502** 的问题：服务端跑在国内 VPS, 直连 register.windsurf.com 超时（Cloudflare CDN 国内不可达）",
+      "改为**客户端本地直调** windsurf 官方 RegisterUser：手机 App / 桌面端用 Dart 手写 protobuf wire 直接 POST register.windsurf.com，拿到 apiKey 后再 POST 给服务端入库",
+      "新增 Dart 端 `WindsurfRegisterClient`：纯客户端实现 protobuf 编解码（zero deps，BytesBuilder + utf8）",
+      "新增服务端 endpoint `POST /api/windsurf/accounts/save-register-result`：接收客户端上报的 {email, api_key, name, api_server_url}",
+      "添加账号失败提示更新：明确告诉用户「国内可能需要开梯子」，并强调注册成功一次后续切号 / 刷额度都走服务端无须梯子",
+      "保留旧 endpoint `register-with-token` 但标记 @deprecated（用于服务端能访问 windsurf.com 的部署场景）"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 12,
+    "date": "2026-05-07",
+    "changes": [
+      "**完全独立** 的 Windsurf 换号功能（不依赖星火插件、不依赖任何第三方代理）：抄 windsurf cascade extension `dist/extension.js` 反编译出的官方 OAuth 流程",
+      "登录链路：客户端构造 `https://windsurf.com/windsurf/signin?response_type=token&client_id=3GUryQ7ldAeKEuD2obYnppsnmj58eP5u&redirect_uri=show-auth-token&prompt=login` → 用户在浏览器登录后页面直接显示 `Authentication Token` → 用户复制粘贴回客户端 → 服务端调 windsurf 官方 `register.windsurf.com/exa.seat_management_pb.SeatManagementService/RegisterUser` 用 protobuf binary 协议（手写 wire format, 无新依赖）拿真实 apiKey/name/apiServerUrl 入库",
+      "彻底废弃：willxin666 / aiapi.indevs.in 第三方代理已被 Cloudflare 1027 永久封死，全部相关 UI 已移除",
+      "添加账号对话框 3 步引导：(1) 填邮箱 (2) 点按钮打开 windsurf.com 登录页 (3) 粘贴 token 提交。token URL 可一键复制",
+      "账号卡片 ⋮ 菜单新增「重新登录 (OAuth)」选项：token 过期 / 异常时一键重新走 OAuth 拿新 apiKey",
+      "服务端新增 `POST /api/windsurf/accounts/register-with-token`：接收 firebase_id_token → 调 register.windsurf.com → 写 apiKey",
+      "DB schema 扩展：`windsurf_api_key` (devin-session-token$<JWT>) / `windsurf_name` / `api_server_url` 三个字段保存 windsurf 官方注册返回的真实凭据"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 11,
+    "date": "2026-05-06",
+    "changes": [
+      "修复添加账号时服务端代理被 Cloudflare WAF (HTTP 429 / error 1027) 拦截的问题：服务器 IP 被屏蔽时无法登录代理拿 token",
+      "新增 3 种登录模式（添加账号对话框 SegmentedButton 切换）：(1) 本机直连代理 - 推荐，绕开服务端 IP 屏蔽; (2) 服务端代理 - 老逻辑，可能 1027; (3) 手动粘贴 token - 最稳，从浏览器 F12 抓 idToken/auth1Token",
+      "新增 WindsurfProxyLogin Dart 服务：客户端直连 willxin666 / aiapi.indevs.in，支持多 User-Agent 重试 + 详细诊断日志",
+      "服务端代理失败时弹「改用本机直连」按钮一键重试",
+      "新增 POST /api/windsurf/accounts/save-tokens：客户端直连代理拿到 token 后上传服务端保存",
+      "失败诊断对话框：显示尝试日志 + 排查建议（含从浏览器抓 token 的具体步骤）",
+      "账号卡片 ⋮ 菜单新增「本机直连重新登录」选项：对已存在但缺 token 的账号一键补 token"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 10,
+    "date": "2026-05-06",
+    "changes": [
+      "Windsurf 自动换号闭环 (B + C 方案)：桌面端 ide_claw.exe 接到 windsurf_switch 后自动 kill Windsurf + 清空 globalStorage 中 codeium/windsurf 扩展缓存 + 重启 Windsurf + 把新账号密码复制到剪贴板 + 弹桌面通知（无需手动操作）",
+      "新增 cascade/windsurf_hook.py：Cascade 检测到「out of credits / quota exhausted」类错误时主动调 auto-switch 触发自动切换；支持 status / list / switch / auto-switch 4 个子命令",
+      "Cascade 规则更新 .windsurfrules：明确触发条件 + 调用方式 + 切换后续动作",
+      "桌面端 DesktopHomeScreen 新增独立系统级 WS 连接 (复用 default session)，专门订阅 windsurf_switch 事件并触发 WindsurfPatchService.performSwitch；30秒去重避免重连重复触发",
+      "服务端新增 GET /api/windsurf/accounts/credentials 让已认证客户端拉账号明文密码 (HTTPS + Bearer token)，桌面端 patch 时复制到剪贴板让用户登录粘贴",
+      "WindsurfPatchService 跨平台支持：Windows (taskkill+APPDATA) / macOS (pkill+~/Library/Application Support/Windsurf) / Linux (~/.config/Windsurf)；提供 diagnose() 检测安装路径"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 9,
+    "date": "2026-05-06",
+    "changes": [
+      "新增 Windsurf 账号池管理 (复刻星火无痕换号 v8.3.8 核心功能)：手机端 + 桌面端右上角进入「账号池」",
+      "添加账号：输入邮箱+密码，服务端自动调第三方代理 (willxin666.xyz / indevs.in) 拉取 idToken/auth1Token，再调 web-backend.windsurf.com WindsurfPostAuth 换 session JWT",
+      "额度展示：每个账号显示日额度 (dailyRemainingPercent) + 周额度 (weeklyRemainingPercent) 进度条 + 重置倒计时 + plan name",
+      "刷新额度：单个或全部账号一键并发刷新 (POST /api/windsurf/accounts/refresh-quota & refresh-all-quotas)",
+      "手动切换：列表项 ⋮ 菜单选「切换到此账号」，服务端 WS 广播 windsurf_switch 命令给桌面端",
+      "自动切换：当 daily 或 weekly 余量低于 5% 阈值，调 /api/windsurf/accounts/switch (无 email) 自动找下一个可用账号",
+      "额度耗尽上报：POST /api/windsurf/accounts/quota-exhausted 在检测到强制停止对话错误时触发自动切下一个号",
+      "客户端 WsService 新增 windsurfSwitch 事件流，订阅后可在切换发生时弹通知给用户",
+      "DB schema 扩展 windsurf_accounts: daily/weekly_remaining_percent + reset_at_unix + plan_name + id_token/refresh_token/auth1_token + account_id/primary_org_id + auto_switch_threshold + is_active 字段"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 8,
+    "date": "2026-05-06",
+    "changes": [
+      "修复多端实时同步 bug：一端发送的消息现在另一端可立即收到（之前需等 15s 轮询，因服务器只广播 type='command'，客户端 ws_service 只监听 type='message'）",
+      "会话列表项右侧新增 ⋮ 菜单：可重命名对话、删除对话（含级联删除消息+命令）",
+      "会话列表项 subtitle 新增『工作区: xxx』灰色小字，显示该会话所属项目",
+      "聊天输入框输入 @ 自动弹出工作区文件搜索菜单（手机端 ModalBottomSheet / 桌面端 Dialog），支持模糊搜索 + 一键引用",
+      "选中文件后自动插入 @file:relative/path 引用标记，dialog.py 收到回复时自动解析并把绝对路径写入 phone_response.md，引导 AI 读取",
+      "AI 收到用户回复后立即推送『📥 AI 已收到指令: <预览>』反馈消息，让用户即时确认指令已被处理",
+      "新增服务端接口：POST /api/sessions/rename, POST /api/sessions/delete, POST/GET /api/sessions/files",
+      "服务端新增 session_files / session_workspace 表：dialog.py 推送时同步上报工作区文件清单"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 7,
+    "date": "2026-05-06",
+    "changes": [
+      "新增 Cascade 自动续接：dialog.py 收到回复后自动按 Windsurf 的 Continue 按钮，让暂停的对话恢复",
+      "手机端 + 桌面端新增『关于』页面：显示版本号、build 号、服务器地址、手动检查更新按钮、ICP 备案号",
+      "手机端 SessionListScreen / 桌面端侧边栏 header 新增『关于』入口（i 图标）"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 6,
+    "date": "2026-05-06",
+    "changes": [
+      "桌面端（Windows）也支持自动更新：检测到新版会自动下载 zip + 解压，用户确认后应用自动重启替换",
+      "首页底部增加 ICP 备案号链接（粤ICP备2026002668号-1）",
+      "桌面端 zip 内置 setup-cascade.bat 一键安装 Python + dialog.py 依赖",
+      "新增『先打开我阅读说明事项.txt』中文用户引导"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 5,
+    "date": "2026-05-06",
+    "changes": [
+      "WebRTC fallback STUN 切到国内可达节点（小米/腾讯/Cloudflare 优先）",
+      "自动更新检查改为每次冷启动强制执行，避免装上时恰好是最新版导致 24h 内不再检查",
+      "release 脚本增强：systemctl 等就绪 + sha256 比对验证 + GBK 兼容输出"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 4,
+    "date": "2026-05-06",
+    "changes": [
+      "客户端 WebRTC 接入动态 TURN 凭证（带缓存 + fallback）",
+      "弱网/对称 NAT 场景自动 fallback 到 turns:5349 中继",
+      "iceTransportPolicy 改为 all，让 STUN 失败时自动走 TURN"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 3,
+    "date": "2026-05-06",
+    "changes": [
+      "服务端新增 /api/webrtc/turn-credentials 端点（HMAC 短期凭证）",
+      "服务端新增 Windsurf 账号池接口（/api/windsurf/*）",
+      "客户端新增自动更新模块 UpdateService + UpdateDialogListener",
+      "桌面端启动本地 IPC 服务（127.0.0.1:13800）"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 2,
+    "date": "2026-04-30",
+    "changes": [
+      "推送通道升级到 WebSocket，支持双向命令",
+      "新增图片推送 + 文件上传"
+    ]
+  },
+  {
+    "version": "1.0.0",
+    "build": 1,
+    "date": "2026-04-15",
+    "changes": [
+      "首版：基础 PC → Server → Mobile 文本推送链路",
+      "提供 Cascade 集成的 dialog.py 脚本"
+    ]
+  }
+]

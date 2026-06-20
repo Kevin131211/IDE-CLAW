@@ -1,0 +1,7 @@
+# IDE Claw - Cascade 集成 (dialog.py) 运行依赖
+#
+# 由 setup-cascade.bat 自动安装。
+# 仅当你想让 Cascade 通过 dialog.py 推送消息时才需要。
+
+requests>=2.28.0
+websocket-client>=1.5.0

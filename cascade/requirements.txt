@@ -1,0 +1,28 @@
+# IDE Claw - cascade/dialog.py 运行依赖
+#
+# 仅当你想让 Cascade（Windsurf 的 AI）通过 dialog.py 主动推送消息
+# 到手机/桌面端时才需要装这些。
+#
+# 普通使用（手机 APK / 桌面 EXE / VSIX 插件）完全不需要 Python。
+#
+# 安装：
+#     pip install -r cascade/requirements.txt
+#
+# Python 版本：3.8+ 即可
+
+# HTTP 推送（必需）
+requests>=2.28.0
+
+# WebSocket 监听用户回复（必需，监听手机/桌面端回包）
+websocket-client>=1.5.0
+
+# Cascade 自动续接（可选，仅 Windows）
+# 用于 Cascade 暂停时自动按 Windsurf 的 'Continue' 按钮
+# 没装的话 dialog.py 仍可正常工作，只是不会自动续接
+#
+# 优先级: 图像匹配(pyautogui+opencv) > UIA 定位+pyautogui 点击 > Alt+Enter 热键
+# 三种方案任意一种装上都能工作; 全装可获得最佳成功率.
+uiautomation>=2.0.18; sys_platform == "win32"
+pyautogui>=0.9.54; sys_platform == "win32"
+pillow>=9.0.0; sys_platform == "win32"
+opencv-python>=4.5.0; sys_platform == "win32"

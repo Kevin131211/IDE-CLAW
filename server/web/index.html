@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IDE Claw — 多端 IDE 推送 / 协作工具</title>
+<meta name="description" content="IDE Claw 是一个把 Cascade 与 IDE 工作流推送到手机和桌面端的多平台工具，支持 P2P 直连和 TURN 中继。" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #0b0d12;
+    --bg-card: #14171f;
+    --bg-card-hover: #1a1e29;
+    --border: #232838;
+    --text: #e7eaf0;
+    --text-mute: #8b94a8;
+    --accent: #7c5cff;
+    --accent-2: #4ad7ff;
+    --success: #3ddc97;
+    --warning: #ffb84d;
+    --shadow: 0 10px 40px rgba(124, 92, 255, 0.15);
+  }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124, 92, 255, 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 30%, rgba(74, 215, 255, 0.10), transparent 60%);
+    background-attachment: fixed;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Hero */
+  header.hero { padding: 80px 0 60px; text-align: center; }
+  .logo {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+    margin-bottom: 24px;
+  }
+  .logo-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: var(--shadow);
+  }
+  h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.15;
+    margin: 0 0 20px;
+    background: linear-gradient(135deg, #fff 0%, #b8c1d6 60%, #7c5cff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    font-size: 18px;
+    color: var(--text-mute);
+    max-width: 680px;
+    margin: 0 auto 36px;
+  }
+  .badges {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 48px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(124, 92, 255, 0.12);
+    border: 1px solid rgba(124, 92, 255, 0.3);
+    font-size: 13px; color: #c2b6ff;
+  }
+  .badge.alt { background: rgba(74, 215, 255, 0.10); border-color: rgba(74, 215, 255, 0.3); color: #9be4f6; }
+  .badge.green { background: rgba(61, 220, 151, 0.10); border-color: rgba(61, 220, 151, 0.3); color: #8ee9c0; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Features */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 64px;
+  }
+  .feature {
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: all 0.2s;
+  }
+  .feature:hover { transform: translateY(-2px); border-color: rgba(124, 92, 255, 0.4); }
+  .feature .ico { font-size: 22px; margin-bottom: 8px; }
+  .feature h3 { margin: 0 0 6px; font-size: 16px; }
+  .feature p { margin: 0; font-size: 14px; color: var(--text-mute); }
+
+  /* Section title */
+  .section-title {
+    text-align: center;
+    margin-top: 80px; margin-bottom: 32px;
+  }
+  .section-title h2 {
+    font-size: 32px; margin: 0 0 8px;
+    background: linear-gradient(135deg, #fff, #b8c1d6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section-title p { color: var(--text-mute); margin: 0; }
+
+  /* Download cards */
+  .downloads {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .dl-card {
+    position: relative;
+    padding: 28px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    transition: all 0.25s;
+    overflow: hidden;
+  }
+  .dl-card::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(124, 92, 255, 0.08));
+    opacity: 0; transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .dl-card:hover { border-color: rgba(124, 92, 255, 0.5); transform: translateY(-3px); }
+  .dl-card:hover::before { opacity: 1; }
+  .dl-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 18px;
+    box-shadow: 0 6px 20px rgba(124, 92, 255, 0.25);
+  }
+  .dl-card h3 { margin: 0 0 6px; font-size: 22px; }
+  .dl-card .platform { font-size: 13px; color: var(--text-mute); margin-bottom: 18px; }
+  .dl-card .meta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 13px; color: var(--text-mute); margin-bottom: 22px;
+  }
+  .dl-card .meta span { display: inline-flex; gap: 4px; align-items: center; }
+  .dl-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #5d3ff7);
+    color: #fff; font-weight: 600; font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none; cursor: pointer;
+  }
+  .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124, 92, 255, 0.4); text-decoration: none; }
+  .dl-btn.alt { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .dl-btn.alt:hover { border-color: var(--accent); }
+  .dl-card .hint {
+    margin-top: 14px;
+    font-size: 12px; color: var(--text-mute); text-align: center;
+  }
+
+  /* Changelog */
+  #changelog { margin-bottom: 80px; }
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 8px; top: 6px; bottom: 6px;
+    width: 2px; background: linear-gradient(180deg, var(--accent), transparent);
+  }
+  .release {
+    position: relative;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .release::before {
+    content: "";
+    position: absolute;
+    left: -29px; top: 22px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  .release.latest::before { background: var(--success); box-shadow: 0 0 0 4px var(--bg), 0 0 12px var(--success); }
+  .release-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .release-head .ver { font-size: 18px; font-weight: 700; }
+  .release-head .build { font-size: 13px; color: var(--text-mute); }
+  .release-head .latest-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(61, 220, 151, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(61, 220, 151, 0.3);
+  }
+  .release-head .date { font-size: 13px; color: var(--text-mute); margin-left: auto; }
+  .release p { margin: 0; color: #c8d0e0; font-size: 14px; }
+  .release ul { margin: 6px 0 0; padding-left: 22px; color: #c8d0e0; font-size: 14px; }
+  .release li { margin-bottom: 3px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 13px;
+  }
+  footer code { background: var(--bg-card); padding: 2px 8px; border-radius: 4px; font-size: 12px; color: var(--accent-2); }
+
+  /* Loading */
+  .loading { color: var(--text-mute); font-size: 14px; padding: 14px; text-align: center; }
+
+  @media (max-width: 600px) {
+    header.hero { padding: 50px 0 40px; }
+    .container { padding: 0 16px; }
+    .release-head .date { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header class="hero">
+    <div class="logo">
+      <span class="logo-icon">🦾</span>
+      <span>IDE Claw</span>
+    </div>
+    <h1>把 Cascade 推到你的<br/>手机、桌面、和任何地方</h1>
+    <p class="subtitle">
+      多平台消息推送 + WebRTC P2P 直连 + TURN 中继。让 AI 编程会话突破单机限制——挂着 Cascade 跑长任务，去散步、开会、躺床上，全都能收到推送和回复。
+    </p>
+    <div class="badges">
+      <span class="badge"><span class="dot"></span>开源 / Apache 2.0</span>
+      <span class="badge alt"><span class="dot"></span>WebRTC + TURN 中继</span>
+      <span class="badge green"><span class="dot"></span>服务端 + 客户端 + IDE 插件</span>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="ico">📱</div>
+        <h3>手机收推送</h3>
+        <p>Android APK，自动检查更新，长按消息可直接回复 Cascade</p>
+      </div>
+      <div class="feature">
+        <div class="ico">💻</div>
+        <h3>桌面端 IPC</h3>
+        <p>Windows 桌面应用，本地 13800 端口直连 IDE，毫秒级响应</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🧩</div>
+        <h3>VSCode 插件</h3>
+        <p>自动注入 .windsurfrules，让 Cascade 知道何时调用 dialog.py</p>
+      </div>
+      <div class="feature">
+        <div class="ico">🌐</div>
+        <h3>WebRTC + TURN</h3>
+        <p>支持对称 NAT 中继，弱网环境下自动 fallback 到 TURNS:5349</p>
+      </div>
+    </div>
+  </header>
+
+  <section id="downloads">
+    <div class="section-title">
+      <h2>下载</h2>
+      <p>三端齐全，挑你需要的</p>
+    </div>
+
+    <div class="downloads">
+      <!-- Android APK -->
+      <div class="dl-card">
+        <div class="dl-icon">📱</div>
+        <h3>手机端</h3>
+        <div class="platform">Android · 5.0+</div>
+        <div class="meta">
+          <span>📦 <span id="apk-size">--</span></span>
+          <span>🔢 <span id="apk-build">build --</span></span>
+        </div>
+        <a class="dl-btn" href="/dl/ide-claw-latest.apk" download>下载 APK</a>
+        <div class="hint">第一次安装需要授权"未知来源"。装上后自动检查更新。</div>
+      </div>
+
+      <!-- Windows Desktop -->
+      <div class="dl-card">
+        <div class="dl-icon">💻</div>
+        <h3>桌面端</h3>
+        <div class="platform">Windows · x64</div>
+        <div class="meta">
+          <span>📦 21 MB</span>
+          <span>🔢 <span id="desktop-build">build --</span></span>
+        </div>
+        <a class="dl-btn" href="/dl/ide-claw-windows.zip" download>下载 ZIP</a>
+        <div class="hint">解压后双击 ide_claw.exe，会在 13800 端口起本地 IPC 服务</div>
+      </div>
+
+      <!-- VSIX -->
+      <div class="dl-card">
+        <div class="dl-icon">🧩</div>
+        <h3>IDE 插件</h3>
+        <div class="platform">VS Code / Windsurf / Cursor</div>
+        <div class="meta">
+          <span>📦 ~9 KB</span>
+          <span>🔢 v0.2.0</span>
+        </div>
+        <a class="dl-btn" href="/dl/ide-claw-rules-injector.vsix" download>下载 VSIX</a>
+        <div class="hint">命令行：<code style="background:var(--bg);padding:1px 4px;border-radius:3px;font-size:11px;">code --install-extension xxx.vsix</code></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="changelog">
+    <div class="section-title">
+      <h2>更新日志</h2>
+      <p>每次发版的变更点都在这里</p>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <div class="loading">加载中…</div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Server: <code>push.shoot-game.cn</code> ·
+      API: <code>/api/version</code> ·
+      <a href="/api/version" target="_blank">实时版本 JSON</a>
+    </p>
+    <p style="margin-top:8px;opacity:0.7;">© 2026 IDE Claw</p>
+    <p style="margin-top:6px;opacity:0.65;">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer"
+         style="color:inherit;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.3);">
+        粤ICP备2026002668号-1
+      </a>
+    </p>
+  </footer>
+</div>
+
+<script>
+  // 同时拉 /api/version (latest) 和 /changelog.json (history)
+  async function loadAll() {
+    const timeline = document.getElementById('timeline');
+    try {
+      const [verResp, logResp] = await Promise.all([
+        fetch('/api/version'),
+        fetch('/changelog.json'),
+      ]);
+      const ver = await verResp.json();
+      let history = [];
+      if (logResp.ok) {
+        history = await logResp.json();
+      }
+
+      // 头部摘要：latest_build + apk size
+      if (ver.apk_size) {
+        document.getElementById('apk-size').textContent =
+          (ver.apk_size / 1024 / 1024).toFixed(1) + ' MB';
+      }
+      if (ver.latest_build) {
+        document.getElementById('apk-build').textContent = 'build ' + ver.latest_build;
+        document.getElementById('desktop-build').textContent = 'build ' + ver.latest_build;
+      }
+
+      // 把 /api/version 当作"最新一条"插入历史顶部（避免 changelog.json 漏掉最新版）
+      const latestEntry = {
+        version: ver.latest_version || '1.0.0',
+        build: ver.latest_build || 0,
+        date: ver.release_date || '',
+        changes: ver.changelog || '',
+        latest: true,
+      };
+
+      // 去重：如果 history[0].build === latestEntry.build，用 latest 的覆盖
+      let merged = history.slice();
+      if (merged.length > 0 && merged[0].build === latestEntry.build) {
+        merged[0] = Object.assign({}, merged[0], latestEntry);
+      } else {
+        merged = [latestEntry, ...merged];
+      }
+      // 按 build 降序
+      merged.sort((a, b) => (b.build || 0) - (a.build || 0));
+
+      timeline.innerHTML = '';
+      merged.forEach((rel, idx) => {
+        const div = document.createElement('div');
+        div.className = 'release' + (idx === 0 ? ' latest' : '');
+        const head = document.createElement('div');
+        head.className = 'release-head';
+        head.innerHTML = `
+          <span class="ver">v${rel.version}</span>
+          <span class="build">build ${rel.build}</span>
+          ${idx === 0 ? '<span class="latest-tag">最新</span>' : ''}
+          <span class="date">${rel.date || ''}</span>
+        `;
+        div.appendChild(head);
+
+        // changes 可能是字符串或数组
+        if (Array.isArray(rel.changes)) {
+          const ul = document.createElement('ul');
+          rel.changes.forEach(c => {
+            const li = document.createElement('li');
+            li.textContent = c;
+            ul.appendChild(li);
+          });
+          div.appendChild(ul);
+        } else if (rel.changes) {
+          const p = document.createElement('p');
+          p.textContent = rel.changes;
+          div.appendChild(p);
+        }
+
+        timeline.appendChild(div);
+      });
+
+      if (merged.length === 0) {
+        timeline.innerHTML = '<div class="loading">暂无版本记录</div>';
+      }
+    } catch (e) {
+      timeline.innerHTML = '<div class="loading">加载失败：' + e.message + '</div>';
+    }
+  }
+  loadAll();
+</script>
+
+</body>
+</html>
